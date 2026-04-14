@@ -52,6 +52,7 @@ public class WaitingListService {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_LOCK_INTERRUPTED);
         } finally {
             if (lock.isHeldByCurrentThread()) {
                 lock.unlock();
@@ -61,30 +62,76 @@ public class WaitingListService {
     }
 
     public void rollbackOccupiedStock(UUID courseId, UUID memberId) {
-        String occupancyKey = RedisConstants.USER_COURSE_OCCUPANCY_PREFIX + courseId + ":" + memberId;
-        String stockKey = RedisConstants.COURSE_STOCK_PREFIX + courseId;
+        String lockKey = RedisConstants.ORDER_LOCK_PREFIX + courseId + ":" + memberId;
+        RLock lock = redissonClient.getLock(lockKey);
 
-        // 점유 상태 키 삭제 및 재고 수량 복구
-        redisTemplate.delete(occupancyKey);
-        redisTemplate.opsForValue().increment(stockKey);
+        try {
+            if (lock.tryLock(5, 10, TimeUnit.SECONDS)) {
+                String occupancyKey = RedisConstants.USER_COURSE_OCCUPANCY_PREFIX + courseId + ":" + memberId;
+                String stockKey = RedisConstants.COURSE_STOCK_PREFIX + courseId;
+
+                // Lua 스크립트를 사용하여 점유 확인, 삭제, 재고 복구를 원자적으로 처리
+                String luaScript = 
+                    "if redis.call('exists', KEYS[1]) == 1 then " +
+                    "  redis.call('del', KEYS[1]) " +
+                    "  return redis.call('incr', KEYS[2]) " +
+                    "else " +
+                    "  return nil " +
+                    "end";
+
+                redisTemplate.execute(
+                    new org.springframework.data.redis.core.script.DefaultRedisScript<>(luaScript, Long.class),
+                    java.util.List.of(occupancyKey, stockKey)
+                );
+            } else {
+                throw new ServiceErrorException(OrderExceptionEnum.ERR_LOCK_ACQUISITION_FAILED);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_LOCK_INTERRUPTED);
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
     }
 
     public void addToWaitingList(UUID courseId, UUID memberId) {
         String waitingKey = RedisConstants.WAITING_LIST_PREFIX + courseId;
 
-        // 1. 이미 대기열에 있는지 확인
-        Double score = redisTemplate.opsForZSet().score(waitingKey, memberId.toString());
-        if (score != null) {
+        // Lua 스크립트를 사용하여 이미 대기열에 있는지, 정원이 찼는지 확인 후 추가 (원자적)
+        // 리턴 코드: 1 (성공), -1 (중복), -2 (정원 초과)
+        String luaScript = """
+            local score = redis.call('ZSCORE', KEYS[1], ARGV[1])
+            if score then
+                return -1
+            end
+            local size = redis.call('ZCARD', KEYS[1])
+            if size >= tonumber(ARGV[2]) then
+                return -2
+            end
+            redis.call('ZADD', KEYS[1], ARGV[3], ARGV[1])
+            return 1
+            """;
+
+        Long result = redisTemplate.execute(
+            new org.springframework.data.redis.core.script.DefaultRedisScript<>(luaScript, Long.class),
+            java.util.List.of(waitingKey),
+            memberId.toString(),
+            String.valueOf(OrderConstants.MAX_WAITING_SIZE),
+            String.valueOf(System.currentTimeMillis())
+        );
+
+        if (result == null) {
+            throw new ServiceErrorException(OrderExceptionEnum.ERR_LOCK_INTERRUPTED); // 범용 서버 오류 활용
+        }
+
+        if (result == -1) {
             throw new ServiceErrorException(OrderExceptionEnum.ERR_DUPLICATE_ORDER);
         }
 
-        // 2. 대기열 정원 확인
-        Long waitingSize = redisTemplate.opsForZSet().zCard(waitingKey);
-        if (waitingSize != null && waitingSize >= OrderConstants.MAX_WAITING_SIZE) {
+        if (result == -2) {
             throw new ServiceErrorException(OrderExceptionEnum.ERR_QUEUE_FULL);
         }
-
-        // 3. 대기열 진입
-        redisTemplate.opsForZSet().add(waitingKey, memberId.toString(), System.currentTimeMillis());
     }
 }

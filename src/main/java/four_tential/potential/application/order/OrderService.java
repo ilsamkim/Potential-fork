@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigInteger;
 import java.util.UUID;
 
 @Service
@@ -17,12 +18,17 @@ public class OrderService {
 
     @Transactional
     public Order createOrder(UUID memberId, OrderCreateRequest request) {
+        // TODO: 강의 도메인 서비스의 실제 강의 정보를 조회하도록 수정 필요 (가격 변조 방지)
+        // 현재는 강의 도메인이 구축되지 않아 임시로 요청 데이터를 신뢰함
+        BigInteger coursePrice = request.priceSnap();
+        String courseTitle = request.titleSnap();
+
         Order order = Order.register(
                 memberId,
                 request.courseId(),
                 request.orderCount(),
-                request.priceSnap(),
-                request.titleSnap()
+                coursePrice,
+                courseTitle
         );
         return orderRepository.save(order);
     }

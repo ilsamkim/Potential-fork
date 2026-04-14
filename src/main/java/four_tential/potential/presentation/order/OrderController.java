@@ -7,6 +7,7 @@ import four_tential.potential.presentation.order.dto.OrderCreateRequest;
 import four_tential.potential.presentation.order.dto.OrderCreateResponse;
 import four_tential.potential.presentation.order.dto.OrderPlaceResult;
 import four_tential.potential.presentation.order.dto.OrderWaitingResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,7 @@ public class OrderController {
     @PreAuthorize("hasRole('ROLE_STUDENT')")
     public ResponseEntity<BaseResponse<OrderPlaceResult>> createOrder(
             @AuthenticationPrincipal MemberPrincipal principal,
-            @RequestBody OrderCreateRequest request
+            @Valid @RequestBody OrderCreateRequest request
     ) {
         OrderPlaceResult result = orderFacade.placeOrder(principal.memberId(), request);
 
