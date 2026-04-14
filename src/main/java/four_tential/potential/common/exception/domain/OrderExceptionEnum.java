@@ -9,6 +9,7 @@ public enum OrderExceptionEnum implements ServiceErrorCode {
 
     ERR_NOT_FOUND_ORDER(HttpStatus.NOT_FOUND, "주문 정보를 찾을 수 없습니다"),
     ERR_ALREADY_RESERVED(HttpStatus.CONFLICT, "동일한 시간대에 이미 예약된 코스가 있습니다"),
+    ERR_DUPLICATE_ORDER(HttpStatus.BAD_REQUEST, "이미 해당 강의를 주문 중이거나 대기 중입니다"),
     ERR_NO_AVAILABLE_SEATS(HttpStatus.BAD_REQUEST, "코스의 잔여석이 없습니다"),
     ERR_INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "변경할 수 없는 주문 상태입니다"),
     ERR_CANNOT_CANCEL_ORDER(HttpStatus.BAD_REQUEST, "코스 시작 7일 전까지만 취소가 가능합니다"),

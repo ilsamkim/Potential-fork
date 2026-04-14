@@ -7,4 +7,10 @@ import lombok.NoArgsConstructor;
 public class RedisConstants {
     public static final String REFRESH_TOKEN_PREFIX = "Refresh-Token:";
     public static final String BLACK_LIST_PREFIX = "BlackList:";
+
+    // Order
+    public static final String COURSE_STOCK_PREFIX = "course:stock:";
+    public static final String WAITING_LIST_PREFIX = "waiting:list:";
+    public static final String USER_COURSE_OCCUPANCY_PREFIX = "user:occupancy:";
+    public static final String ORDER_LOCK_PREFIX = "lock:order:";
 }
