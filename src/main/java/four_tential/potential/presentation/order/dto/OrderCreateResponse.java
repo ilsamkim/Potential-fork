@@ -6,7 +6,7 @@ import java.util.UUID;
 public record OrderCreateResponse(
         UUID orderId,
         String status,
-        LocalDateTime expireAt,
+        LocalDateTime expiredAt,
         String message
-) implements OrderPlaceResult {
+) implements OrderPlaceResult{
 }

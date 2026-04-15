@@ -25,6 +25,9 @@ public class OrderController {
 
     private final OrderFacade orderFacade;
 
+    /**
+     * 주문 생성
+     */
     @PostMapping
     @PreAuthorize("hasRole('ROLE_STUDENT')")
     public ResponseEntity<BaseResponse<OrderPlaceResult>> createOrder(
@@ -45,4 +48,5 @@ public class OrderController {
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
+
 }

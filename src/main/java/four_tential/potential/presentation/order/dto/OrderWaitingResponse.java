@@ -6,5 +6,5 @@ public record OrderWaitingResponse(
         UUID courseId,
         String status,
         String message
-) implements OrderPlaceResult {
+) implements OrderPlaceResult{
 }
