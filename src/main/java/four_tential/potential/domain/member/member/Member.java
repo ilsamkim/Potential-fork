@@ -1,4 +1,4 @@
-package four_tential.potential.domain.member;
+package four_tential.potential.domain.member.member;
 
 import four_tential.potential.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
@@ -33,9 +33,11 @@ public class Member extends BaseTimeEntity {
     private String phone;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
     private MemberRole role;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
     private MemberStatus status;
 
     @Column(nullable = false, length = 60)
@@ -48,12 +50,12 @@ public class Member extends BaseTimeEntity {
     @Column(name = "withdrawal_at")
     private LocalDateTime withdrawalAt;
 
-    public static Member register(String email, String password, String phone, String name) {
+    public static Member register(String email, String password, String name, String phone) {
         Member member = new Member();
         member.email = email;
         member.password = password;
-        member.phone = phone;
         member.name = name;
+        member.phone = phone;
         member.role = MemberRole.ROLE_STUDENT;
         member.status = MemberStatus.ACTIVE;
         member.profileImageUrl = null;

@@ -1,4 +1,6 @@
-package four_tential.potential.domain.member;
+package four_tential.potential.domain.member.fixture;
+
+import four_tential.potential.domain.member.member.Member;
 
 public class MemberFixture {
 
@@ -9,6 +11,6 @@ public class MemberFixture {
     public static final String DEFAULT_PROFILE_IMAGE_URL = "https://cdn.example.com/images/profile.jpg";
 
     public static Member defaultMember() {
-        return Member.register(DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_PHONE, DEFAULT_NAME);
+        return Member.register(DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_NAME, DEFAULT_PHONE);
     }
 }
